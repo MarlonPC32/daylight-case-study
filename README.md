@@ -10,7 +10,7 @@ The platform ran live at Black Hat 2026, supporting event operations and the dem
 
 The technical focus was coordinating requests across both interfaces while supporting flexible authentication, live operational updates, and reliable notifications.
 
-**Stack:** React, TypeScript, Tailwind CSS, Supabase (Postgres, Row Level Security, Auth, and Realtime), Vercel, Twilio (phone OTP), and a WhatsApp Business number hosted on Railway for messaging.
+**Stack:** React, TypeScript, Tailwind CSS, Supabase (Postgres, Row Level Security, Auth, and Realtime), Vercel, Twilio (phone OTP), and a Railway-hosted messaging application connected to a WhatsApp Business number.
 
 ## Architecture decisions
 
@@ -22,7 +22,7 @@ The client web app and operations dashboard served different audiences, so acces
 
 ### Messaging on a WhatsApp Business number
 
-The messaging layer ran on a WhatsApp Business number hosted on Railway, inside an app built around it — not through a third-party messaging API. That kept control over the sending flow, including delivery tracking, in one place.
+The messaging application ran on Railway and connected to a WhatsApp Business number. The application coordinated the sending flow, error handling, and SMS fallback; Railway hosted the application rather than the phone number itself.
 
 ### React and TypeScript across both interfaces
 
@@ -44,7 +44,7 @@ Vercel was chosen for preview deployments and zero-configuration hosting. Previe
 
 WhatsApp was the primary notification channel, but template restrictions and rate limits caused messages to fail silently. Sending a notification was not enough to establish that it had reached its recipient.
 
-Delivery was tracked through the Railway logs: an automatic error-code handler watched for failed message states and triggered the SMS fallback without manual intervention. No critical notification depended on a single channel.
+The application used an automatic error-code handler to detect failed message states and trigger SMS fallback without manual intervention. Railway logs provided visibility into those errors; logging and fallback handling served different purposes. No critical notification depended on a single channel.
 
 The distinction between a send attempt and successful delivery mattered operationally. A request could progress correctly inside the platform while the person relying on its notification remained unaware of the change.
 
@@ -52,7 +52,7 @@ The distinction between a send attempt and successful delivery mattered operatio
 
 Phone numbers arrived in inconsistent formats. The input flow had an explicit country selector and normalized numbers to E.164 at the boundary before they reached the messaging layer.
 
-But registrations also came through service channels where people never specified a country — and those numbers still had to be registered. An automatic country handler took those inputs and converted them into real dialable number codes, so the messy path resolved to the same E.164 format as the clean one instead of failing or guessing silently.
+Registrations also arrived through service channels without an explicit country selection. Those inputs required country resolution before E.164 normalization. Country resolution and formatting were separate concerns: a national-format number without country context can be ambiguous, and formatting alone cannot establish its country or guarantee deliverability.
 
 ## Operations at Black Hat
 
