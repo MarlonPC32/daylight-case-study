@@ -44,7 +44,7 @@ Vercel was chosen for preview deployments and zero-configuration hosting. Previe
 
 WhatsApp was the primary notification channel, but template restrictions and rate limits caused messages to fail silently. Sending a notification was not enough to establish that it had reached its recipient.
 
-The app tracked delivery outcomes on the WhatsApp Business number: when a message reached a failed or undelivered state, it automatically fell back to SMS. No critical notification depended on a single channel.
+Delivery was tracked through the Railway logs: an automatic error-code handler watched for failed message states and triggered the SMS fallback without manual intervention. No critical notification depended on a single channel.
 
 The distinction between a send attempt and successful delivery mattered operationally. A request could progress correctly inside the platform while the person relying on its notification remained unaware of the change.
 
@@ -52,7 +52,7 @@ The distinction between a send attempt and successful delivery mattered operatio
 
 Phone numbers arrived in inconsistent formats. The input flow had an explicit country selector and normalized numbers to E.164 at the boundary before they reached the messaging layer.
 
-But registrations also came through service channels where people never specified a country — and those numbers still had to be registered. Normalization had to handle both the clean path (selector to E.164) and the messy one (no country given), rather than assuming every number arrived well-formed.
+But registrations also came through service channels where people never specified a country — and those numbers still had to be registered. An automatic country handler took those inputs and converted them into real dialable number codes, so the messy path resolved to the same E.164 format as the clean one instead of failing or guessing silently.
 
 ## Operations at Black Hat
 
